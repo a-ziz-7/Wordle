@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wordle Helper</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f0f4f8;
+            color: #333;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
+        nav+* {
+            padding-top: 25px;
+        }
+
+        h1 {
+            color: #4a90e2;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: 1.2em;
+            /* Increase font size for better readability */
+            color: #4a90e2;
+            /* Set the color to match the theme */
+            margin-top: 20px;
+            /* Add margin for spacing */
+            font-weight: bold;
+            /* Make the text bold */
+            text-transform: uppercase;
+            /* Make the text uppercase for emphasis */
+        }
+
+        .input-group {
+            max-width: 350px;
+            margin: auto;
+            justify-content: space-between;
+        }
+
+        .letter-input {
+            width: 50px;
+            height: 50px;
+            font-size: 1.5em;
+            text-align: center;
+            border-radius: 8px;
+            margin: 0 5px;
+            border: 2px solid #4a90e2;
+            color: #4a90e2;
+            background-color: #fff;
+            transition: border-color 0.3s;
+        }
+
+        .letter-input:focus {
+            outline: none;
+            border-color: #333;
+        }
+
+        #word-list {
+            max-width: 90%;
+            margin: auto;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .word-item {
+            padding: 8px 12px;
+            /* border: 1px solid #4a90e2; */
+            border-radius: 2px;
+            background-color: #e8f0fe;
+            color: #4a90e2;
+            /* font-weight: bold; */
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .word-item:hover {
+            background-color: #4a90e2;
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav d-flex w-100 justify-content-around">
+                <li class="nav-item flex-fill">
+                    <a class="nav-link" href="" style="color: green;">Level 1 (Greens)</a>
+                </li>
+                <li class="nav-item flex-fill">
+                    <a class="nav-link" href="/level2" style="color: rgb(139, 139, 3);">Level 2 (Greens, Yellows)</a>
+                </li>
+                <li class="nav-item flex-fill">
+                    <a class="nav-link" href="level3" style="color: rgb(77, 76, 76);">Level 3 (Greens, Yellows,
+                        Grays)</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+
+    <h1>Wordle Helper</h1>
+    <p>Known Positions (greens)</p>
+    <div class="input-group">
+        <input type="text" class="letter-input" id="input-1" maxlength="1">
+        <input type="text" class="letter-input" id="input-2" maxlength="1">
+        <input type="text" class="letter-input" id="input-3" maxlength="1">
+        <input type="text" class="letter-input" id="input-4" maxlength="1">
+        <input type="text" class="letter-input" id="input-5" maxlength="1">
+    </div>
+
+    <div id="word-list" class="d-flex flex-wrap mt-4">
+        <!-- Matching words will be displayed here -->
+    </div>
+
+
+    <script>
+        // Get all input fields in an array
+        const inputFields = [
+            document.getElementById('input-1'),
+            document.getElementById('input-2'),
+            document.getElementById('input-3'),
+            document.getElementById('input-4'),
+            document.getElementById('input-5')
+        ];
+        const wordList = document.getElementById('word-list');
+
+        // Add input event listeners to each field for seamless typing
+        inputFields.forEach((input, index) => {
+            input.addEventListener('input', (event) => {
+                const char = event.target.value.toUpperCase();
+                if (char && index < inputFields.length - 1) {
+                    // Move to the next field automatically
+                    inputFields[index + 1].focus();
+                }
+
+                // Clear the value if it’s more than 1 character, keeping the first only
+                if (char.length > 1) {
+                    event.target.value = char[0];
+                }
+
+                if (char[0] === " ") {
+                    console.log(event.target.value);
+                    event.target.value = "";
+
+                }
+
+                // Gather all input values as the pattern
+                const pattern = inputFields.map(field => field.value || '_').join('');
+
+                // Fetch matching words and display
+                fetch(`/api/words?pattern=${pattern}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        wordList.innerHTML = "";
+                        data.forEach(word => {
+                            const wordItem = document.createElement('div');
+                            wordItem.className = "list-group-item word-item";
+                            wordItem.textContent = word;
+                            wordItem.style.cursor = 'pointer';
+                            wordItem.addEventListener('click', () => {
+                                if (wordItem.style.backgroundColor === 'lightcoral') {
+                                    wordItem.style.backgroundColor = '#e8f0fe';
+                                    wordItem.style.color = '#4a90e2';
+                                } else {
+                                    wordItem.style.backgroundColor = 'lightcoral';
+                                    wordItem.style.color = '#fff';
+                                }
+                            });
+                            wordList.appendChild(wordItem);
+                        });
+                    });
+            });
+
+            // Handle backspace to move focus to the previous input
+            input.addEventListener('keydown', (event) => {
+                if (event.key === 'Backspace' && !input.value && index > 0) {
+                    inputFields[index - 1].focus();
+                }
+            });
+        });
+    </script>
+
+</body>
+
+</html>
